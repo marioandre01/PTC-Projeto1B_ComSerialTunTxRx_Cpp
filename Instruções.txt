@@ -1,0 +1,61 @@
+Para testar o código ComSerialTunTxRX sida as seguintes etapas:
+
+## 1- Para o código funcionar é necessário ter um link serial disponível. Para se ter isso é usado o programa serialemu que emula um link serial com determinada taxa de bits. Para usá-lo descompacte o arquivo Serialemu.zip fornecido nessa pasta, e entre no subdiretório Serialemu
+
+
+## 2- Compile-o com o seguinte comando:
+
+make
+
+
+## 3- Copie o programa compilado para o diretório pessoal do usuário, e depois mude para esse diretório:
+
+cp -a dist/Debug/GNU-Linux/serialemu ~
+
+cd ~
+
+
+## 3- Execute o serialemu selecionando a taxa de bits de 9600:
+
+./serialemu -B 9600
+
+
+Ao executar o comando o serialemu el automaticamente vai para segundo plano (daemonize), liberando o terminal. Após sua execução ele retorna dois caminhos que são as duas portas seriais correspondentes às pontas do link serial emulado.
+
+Ex: /dev/pts/1 /dev/pts/2
+
+Anote esses dois caminhos pois serão usados na hora de executar o código.
+
+
+## 4- Com o link serial rodando, o próximo passo é criar o cenário para testar o código. O cenário de teste consiste em rodar o código na maquina do usuário(maquina real) e numa maquina virtual, utilizando o virtualBox com linux. O uso do virtual box é necessário pois como a comunicação vai ocorrer através de um enlace entre duas interfaces tun, é necessário que essas interfaces residam em hosts diferentes. Como só é utilizado a maquina do usuário para o teste, o uso do VirtuaBox se faz necessário. 
+
+Antes de executar a máquina virtual, habilite sua primeira porta serial e associe-a à uma das portas seriais geradas pelo serialemu. Para exemplo de configuração é escolhida a porta 2 (/dev/pts/2). Para fazer a configuração no virtual box vá em Configurações -> Portas Seriais -> Aba porta 1 e modifique as seguintes opções:
+
+Clicar em "habilitar porta Serial"
+Em "numero da porta" colocar "COM1" 
+Em "Modo da porta" colocar "Dispositivo no Hospedeiro" 
+Em "Caminho/Endereço(P)" colocar /dev/pts/2 
+
+clique em Ok
+
+Quando iniciar a máquina virtual, o caminho da porta serial a se utilizar no sistema é /dev/ttyS0.
+
+
+## 5- Com o cenário pronto, o próximo passo é compilar e executar o código na maquina real e na maquina virtual. Para isso descompacte o arquivo ComSerialTunTxRx.zip, entre na pasta ComSerialTunTxRx que apareceu e compile-o com o seguinte comando:
+
+g++ -o app *.cpp -std=c++11
+
+
+Para executa-lo use o seguinte comando:
+
+Maquina real: sudo ./app /dev/pts/1 B9600 10.0.0.1 10.0.0.2
+
+Maquina virtual: sudo ./app /dev/ttyS0 B9600 10.0.0.2 10.0.0.1
+
+Com os códigos rodando percebe-se que nada acontece, só aparece na tela as mensagens "timer!" e "Timeout tun!" referentes aos handle timeout dos callbacks CallbackTun e CallbackTimer. Para realizar o teste em si, dever fazer um ping na maquina real para a maquina virtual ou vice-versa. Para o teste é escolhido o ping da maquina real para a virtual, executando o seguinte comando:
+
+ping 10.0.0.2
+
+Ao realizar o comando o ping, deve-se começar a receber as mensagens de resposta do ping. Acontecendo esse resultado, isso mostra que o código esta executando como o especificado.
+
+
